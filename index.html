@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Počasí - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="pocasi-jasno">
+
+    <!-- ===== ATMOSFÉRICKÉ POZADÍ ===== -->
+    <div class="pozadi-sceny">
+        <!-- 1. JASNO -->
+        <div class="scena scena-jasno">
+            <div class="slunce-kontejner">
+                <div class="slunce-jadro"></div>
+                <div class="slunce-zar"></div>
+                <div class="slunce-paprsky"></div>
+            </div>
+            <div class="mrak mrak-1"></div>
+            <div class="mrak mrak-2"></div>
+            <div class="mrak mrak-3"></div>
+            <div class="mrak mrak-4"></div>
+        </div>
+
+        <!-- 2. OBLAČNO -->
+        <div class="scena scena-oblacno">
+            <div class="mrak-oblacny mo-1"></div>
+            <div class="mrak-oblacny mo-2"></div>
+            <div class="mrak-oblacny mo-3"></div>
+            <div class="mrak-oblacny mo-4"></div>
+            <div class="mrak-oblacny mo-5"></div>
+            <div class="mrak-oblacny mo-6"></div>
+            <div class="mrak-oblacny mo-7"></div>
+            <div class="mrak-oblacny mo-8"></div>
+        </div>
+
+        <!-- 3. DÉŠŤ -->
+        <div class="scena scena-dest">
+            <div class="dest-obal">
+                <div class="dest-vrstva-1"></div>
+                <div class="dest-vrstva-2"></div>
+            </div>
+            <div class="mrak-tmavy m-t-1"></div>
+            <div class="mrak-tmavy m-t-2"></div>
+        </div>
+
+        <!-- 4. NOC -->
+        <div class="scena scena-noc">
+            <div class="mlhovina"></div>
+            <div class="hvezdy-vrstva"></div>
+            <div class="padajici-hvezda"></div>
+            <div class="mesic">
+                <div class="kratér k-1"></div>
+                <div class="kratér k-2"></div>
+                <div class="kratér k-3"></div>
+            </div>
+            <div class="mrak-nocni m-n-1"></div>
+            <div class="mrak-nocni m-n-2"></div>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD ROZLOŽENÍ ===== -->
+    <div class="dashboard-wrapper">
+
+        <!-- LEVÝ PANEL -->
+        <aside class="side-panel">
+            <div class="mini-card">
+                <div class="mini-icon">🌅</div>
+                <div class="mini-info">
+                    <span>Východ slunce</span>
+                    <strong id="vychod-slunce">--:--</strong>
+                </div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-icon">🌇</div>
+                <div class="mini-info">
+                    <span>Západ slunce</span>
+                    <strong id="zapad-slunce">--:--</strong>
+                </div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-icon">☀️</div>
+                <div class="mini-info">
+                    <span>UV Index</span>
+                    <strong id="uv-index">--</strong>
+                </div>
+            </div>
+        </aside>
+
+        <!-- STŘEDNÍ KARTA -->
+        <div class="pocasi-aplikace">
+            <div class="vyhledavac">
+                <input type="text" id="vstup-mesto" placeholder="Zadej město..." autocomplete="off">
+                <button id="tlacitko-hledat">Hledat</button>
+            </div>
+
+            <div class="obsah-aplikace">
+                <div class="panel">
+                    <div class="hlavni-pocasi">
+                        <h2 id="nazev-mesta">Načítám...</h2>
+                        <div class="ikona" id="ikona-pocasi"></div>
+                        <div class="teplota" id="teplota">--<span>°C</span></div>
+                        <div class="stav" id="stav">Zadej město</div>
+                        <div class="minimax" id="minimax">H: --° L: --°</div>
+                    </div>
+
+                    <div class="predpoved-hodiny" id="hodiny"></div>
+                    <div class="predpoved-dny" id="dny"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRAVÝ PANEL -->
+        <aside class="side-panel">
+            <div class="mini-card">
+                <div class="mini-icon">🌡️</div>
+                <div class="mini-info">
+                    <span>Pocitová teplota</span>
+                    <strong id="pocitova-teplota">-- °C</strong>
+                </div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-icon">🌧️</div>
+                <div class="mini-info">
+                    <span>Srážky</span>
+                    <strong id="srazky">-- mm</strong>
+                </div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-icon">💨</div>
+                <div class="mini-info">
+                    <span>Vítr</span>
+                    <strong id="vitr">-- km/h</strong>
+                </div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-icon">💧</div>
+                <div class="mini-info">
+                    <span>Vlhkost</span>
+                    <strong id="vlhkost">-- %</strong>
+                </div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-icon">📊</div>
+                <div class="mini-info">
+                    <span>Tlak</span>
+                    <strong id="tlak">-- hPa</strong>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- SPODNÍ LIŠTA -->
+    <div class="quick-cities">
+        <button onclick="nactiMesto('Praha')">Praha</button>
+        <button onclick="nactiMesto('Brno')">Brno</button>
+        <button onclick="nactiMesto('Ostrava')">Ostrava</button>
+        <button onclick="nactiMesto('Londýn')">Londýn</button>
+        <button onclick="nactiMesto('New York')">New York</button>
+        <button onclick="nactiMesto('Tokio')">Tokio</button>
+    </div>
+
+    <!-- SPODNÍ PATIČKA -->
+    <footer class="app-footer">
+        <a href="https://validator.w3.org/nu/?doc=https%3A%2F%2Fdaniel-gorcica.github.io%2Fpocasi%2F" target="_blank"
+            rel="noopener" class="footer-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+            HTML5
+        </a>
+        <a href="https://jigsaw.w3.org/css-validator/validator?uri=https%3A%2F%2Fdaniel-gorcica.github.io%2Fpocasi%2F&profile=css3svg&usermedium=all&warning=1&vextwarning=&lang=cs"
+            target="_blank" rel="noopener" class="footer-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1"></path>
+                <path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"></path>
+            </svg>
+            CSS3
+        </a>
+        <a href="AI-Citace.md" target="_blank" class="footer-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            AI Citace
+        </a>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

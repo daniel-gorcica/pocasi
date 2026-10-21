@@ -31,6 +31,110 @@ const svgIkony = {
 
 const vstupMesto = document.getElementById('vstup-mesto');
 const tlacitkoHledat = document.getElementById('tlacitko-hledat');
+const tlacitkoPoloha = document.getElementById('tlacitko-poloha');
+const polozkaOblibena = document.querySelector('.menu-item');
+const polozkaNastaveni = document.querySelector('.menu-nastaveni');
+const panelOblibenych = document.getElementById('oblibena-mesta-panel');
+const panelNastaveni = document.getElementById('nastaveni-panel');
+const seznamOblibenych = document.getElementById('seznam-oblibenych');
+const tlacitkoUlozitMesto = document.getElementById('ulozit-mesto');
+const nastaveni = JSON.parse(localStorage.getItem('nastaveni-pocasi') || '{"teplota":"c","vitr":"kmh","svetly":false,"animace":true,"obnoveni":0}');
+let posledniMesto = 'Opava';
+let intervalObnoveni = null;
+
+function ulozNastaveni() {
+    localStorage.setItem('nastaveni-pocasi', JSON.stringify(nastaveni));
+}
+
+function teplotaHodnota(hodnota) {
+    return nastaveni.teplota === 'f' ? Math.round(hodnota * 9 / 5 + 32) : Math.round(hodnota);
+}
+
+function jednotkaTeploty() {
+    return nastaveni.teplota === 'f' ? '°F' : '°C';
+}
+
+function vitrHodnota(hodnota) {
+    return nastaveni.vitr === 'mph' ? Math.round(hodnota * 0.621371) : Math.round(hodnota);
+}
+
+function jednotkaVetru() {
+    return nastaveni.vitr === 'mph' ? 'mph' : 'km/h';
+}
+
+function nastavVzhled() {
+    document.body.classList.toggle('svetly-rezim', nastaveni.svetly);
+    document.body.classList.toggle('bez-animaci', !nastaveni.animace);
+}
+
+function nastavAutomatickeObnoveni() {
+    if (intervalObnoveni) clearInterval(intervalObnoveni);
+    if (Number(nastaveni.obnoveni) > 0) {
+        intervalObnoveni = setInterval(() => nactiMesto(posledniMesto), Number(nastaveni.obnoveni) * 60000);
+    }
+}
+
+function synchronizujNastaveni() {
+    document.getElementById('jednotka-teploty').value = nastaveni.teplota;
+    document.getElementById('jednotka-vetru').value = nastaveni.vitr;
+    document.getElementById('svetly-rezim').checked = nastaveni.svetly;
+    document.getElementById('animace').checked = nastaveni.animace;
+    document.getElementById('automaticke-obnoveni').value = nastaveni.obnoveni;
+    nastavVzhled();
+    nastavAutomatickeObnoveni();
+}
+
+function nactiOblibenaMesta() {
+    try {
+        return JSON.parse(localStorage.getItem('oblibena-mesta') || '[]');
+    } catch (chyba) {
+        console.warn('Oblíbená města se nepodařilo načíst.', chyba);
+        return [];
+    }
+}
+
+function vykresliOblibenaMesta() {
+    seznamOblibenych.innerHTML = '';
+    const mesta = nactiOblibenaMesta();
+
+    if (mesta.length === 0) {
+        seznamOblibenych.innerText = 'Zatím žádná města';
+        return;
+    }
+
+    mesta.forEach(mesto => {
+        const tlacitko = document.createElement('button');
+        tlacitko.type = 'button';
+        tlacitko.innerText = mesto;
+        tlacitko.addEventListener('click', () => nactiMesto(mesto));
+        seznamOblibenych.appendChild(tlacitko);
+    });
+}
+
+function ulozAktualniMesto() {
+    const mesto = document.getElementById('nazev-mesta').innerText.trim();
+    if (!mesto || mesto === 'Načítám...' || mesto === 'Hledám...' || mesto === 'Nenalezeno' || mesto === 'Chyba') return;
+
+    const mesta = nactiOblibenaMesta();
+    if (!mesta.includes(mesto)) {
+        mesta.push(mesto);
+        localStorage.setItem('oblibena-mesta', JSON.stringify(mesta));
+    }
+    vykresliOblibenaMesta();
+}
+
+function aktualizujDatumCas() {
+    const datumCas = document.getElementById('datum-cas');
+    if (!datumCas) return;
+
+    datumCas.innerText = new Intl.DateTimeFormat('cs-CZ', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(new Date());
+}
 
 async function najdiMesto(dotaz) {
     let url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(dotaz)}&count=1&language=cs&format=json`;
@@ -46,13 +150,20 @@ async function najdiMesto(dotaz) {
     return data;
 }
 
-async function nactiMesto(nazevMesta) {
+async function nactiMesto(nazevMesta, souradnice = null) {
+    if (!souradnice) posledniMesto = nazevMesta;
     document.getElementById('nazev-mesta').innerText = "Hledám...";
     document.getElementById('stav').innerText = "Načítám...";
     document.getElementById('ikona-pocasi').innerHTML = '';
 
     try {
-        const geoData = await najdiMesto(nazevMesta);
+        const geoData = souradnice ? {
+            results: [{
+                latitude: souradnice.latitude,
+                longitude: souradnice.longitude,
+                name: "Moje poloha"
+            }]
+        } : await najdiMesto(nazevMesta);
         if (!geoData.results || geoData.results.length === 0) {
             document.getElementById('nazev-mesta').innerText = "Nenalezeno";
             document.getElementById('stav').innerText = "Zkus jiné město";
@@ -64,7 +175,7 @@ async function nactiMesto(nazevMesta) {
         const lon = mesto.longitude;
         const nazev = mesto.name;
 
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,is_day,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,weather_code,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,is_day,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,weather_code,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=auto`;
         const odpoved = await fetch(url);
         const data = await odpoved.json();
 
@@ -74,15 +185,16 @@ async function nactiMesto(nazevMesta) {
         const jeDen = aktualni.is_day;
         const stavInfo = ziskejStav(aktualni.weather_code, jeDen);
 
-        document.body.className = stavInfo.pozadi;
+        document.body.classList.remove("pocasi-jasno", "pocasi-oblacno", "pocasi-dest", "pocasi-noc");
+        document.body.classList.add(stavInfo.pozadi);
         document.getElementById('nazev-mesta').innerText = nazev;
-        document.getElementById('teplota').innerHTML = `${Math.round(aktualni.temperature_2m)}<span>°C</span>`;
+        document.getElementById('teplota').innerHTML = `${teplotaHodnota(aktualni.temperature_2m)}<span>${jednotkaTeploty()}</span>`;
         document.getElementById('stav').innerText = stavInfo.text;
         document.getElementById('ikona-pocasi').innerHTML = svgIkony[stavInfo.ikona];
 
-        document.getElementById('pocitova-teplota').innerText = aktualni.apparent_temperature != null ? `${Math.round(aktualni.apparent_temperature)} °C` : '--';
+        document.getElementById('pocitova-teplota').innerText = aktualni.apparent_temperature != null ? `${teplotaHodnota(aktualni.apparent_temperature)} ${jednotkaTeploty()}` : '--';
         document.getElementById('srazky').innerText = aktualni.precipitation != null ? `${aktualni.precipitation} mm` : '--';
-        document.getElementById('vitr').innerText = aktualni.wind_speed_10m != null ? `${Math.round(aktualni.wind_speed_10m)} km/h` : '--';
+        document.getElementById('vitr').innerText = aktualni.wind_speed_10m != null ? `${vitrHodnota(aktualni.wind_speed_10m)} ${jednotkaVetru()}` : '--';
         document.getElementById('vlhkost').innerText = aktualni.relative_humidity_2m != null ? `${aktualni.relative_humidity_2m} %` : '--';
         document.getElementById('tlak').innerText = aktualni.surface_pressure != null ? `${Math.round(aktualni.surface_pressure)} hPa` : '--';
 
@@ -102,7 +214,7 @@ async function nactiMesto(nazevMesta) {
         }
 
         if (data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_min) {
-            document.getElementById('minimax').innerText = `H: ${Math.round(data.daily.temperature_2m_max[0])}° L: ${Math.round(data.daily.temperature_2m_min[0])}°`;
+            document.getElementById('minimax').innerText = `H: ${teplotaHodnota(data.daily.temperature_2m_max[0])}° L: ${teplotaHodnota(data.daily.temperature_2m_min[0])}°`;
         }
 
         try {
@@ -117,9 +229,9 @@ async function nactiMesto(nazevMesta) {
                     const idx = startIndex + i;
                     if (data.hourly.time[idx]) {
                         const cas = data.hourly.time[idx].split('T')[1];
-                        const teplotaH = Math.round(data.hourly.temperature_2m[idx]);
+                        const teplotaH = teplotaHodnota(data.hourly.temperature_2m[idx]);
                         const stavH = ziskejStav(data.hourly.weather_code[idx], 1);
-                        const ikonaH = stavH.ikona === 'slunce' ? '☀️' : (stavH.ikona === 'dest' ? '🌧️' : '☁️');
+                        const ikonaH = svgIkony[stavH.ikona];
                         hodinyContainer.innerHTML += `
                             <div class="hodina">
                                 <span>${cas}</span>
@@ -142,14 +254,16 @@ async function nactiMesto(nazevMesta) {
                         const castiData = data.daily.time[i].split('-');
                         const datum = new Date(castiData[0], castiData[1] - 1, castiData[2], 12, 0, 0);
                         const nazevDne = i === 1 ? "Zítra" : dnyVTydnu[datum.getDay()];
-                        const maxT = data.daily.temperature_2m_max[i] != null ? Math.round(data.daily.temperature_2m_max[i]) : '--';
-                        const minT = data.daily.temperature_2m_min[i] != null ? Math.round(data.daily.temperature_2m_min[i]) : '--';
+                        const maxT = data.daily.temperature_2m_max[i] != null ? teplotaHodnota(data.daily.temperature_2m_max[i]) : '--';
+                        const minT = data.daily.temperature_2m_min[i] != null ? teplotaHodnota(data.daily.temperature_2m_min[i]) : '--';
+                        const srazky = data.daily.precipitation_probability_max?.[i] != null ? `${data.daily.precipitation_probability_max[i]} %` : '--';
                         const stavD = ziskejStav(data.daily.weather_code[i], 1);
-                        const ikonaD = stavD.ikona === 'slunce' ? '☀️' : (stavD.ikona === 'dest' ? '🌧️' : '☁️');
+                        const ikonaD = svgIkony[stavD.ikona];
                         dnyContainer.innerHTML += `
                             <div class="den">
-                                <span>${nazevDny}</span>
+                                <span>${nazevDne}</span>
                                 <div class="ikona-mala">${ikonaD}</div>
+                                <div class="srazky-den">💧 ${srazky}</div>
                                 <div class="teploty"><strong>${maxT}°</strong> <span>${minT}°</span></div>
                             </div>
                         `;
@@ -170,7 +284,62 @@ tlacitkoHledat.addEventListener('click', () => nactiMesto(vstupMesto.value.trim(
 vstupMesto.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') nactiMesto(vstupMesto.value.trim());
 });
+tlacitkoPoloha.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+        document.getElementById('stav').innerText = "Poloha není podporována";
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        pozice => nactiMesto("Moje poloha", pozice.coords),
+        () => {
+            document.getElementById('stav').innerText = "Povolení polohy zamítnuto";
+        }
+    );
+});
+polozkaOblibena.addEventListener('click', () => {
+    panelOblibenych.hidden = !panelOblibenych.hidden;
+    panelNastaveni.hidden = true;
+    if (!panelOblibenych.hidden) vykresliOblibenaMesta();
+});
+polozkaNastaveni.addEventListener('click', () => {
+    panelNastaveni.hidden = !panelNastaveni.hidden;
+    panelOblibenych.hidden = true;
+});
+tlacitkoUlozitMesto.addEventListener('click', ulozAktualniMesto);
+document.getElementById('jednotka-teploty').addEventListener('change', e => {
+    nastaveni.teplota = e.target.value;
+    ulozNastaveni();
+    nactiMesto(posledniMesto);
+});
+document.getElementById('jednotka-vetru').addEventListener('change', e => {
+    nastaveni.vitr = e.target.value;
+    ulozNastaveni();
+    nactiMesto(posledniMesto);
+});
+document.getElementById('svetly-rezim').addEventListener('change', e => {
+    nastaveni.svetly = e.target.checked;
+    ulozNastaveni();
+    nastavVzhled();
+});
+document.getElementById('animace').addEventListener('change', e => {
+    nastaveni.animace = e.target.checked;
+    ulozNastaveni();
+    nastavVzhled();
+});
+document.getElementById('automaticke-obnoveni').addEventListener('change', e => {
+    nastaveni.obnoveni = e.target.value;
+    ulozNastaveni();
+    nastavAutomatickeObnoveni();
+});
+document.getElementById('vymazat-oblibene').addEventListener('click', () => {
+    localStorage.removeItem('oblibena-mesta');
+    vykresliOblibenaMesta();
+});
 window.addEventListener('DOMContentLoaded', () => {
     vstupMesto.value = "Opava";
+    synchronizujNastaveni();
+    aktualizujDatumCas();
+    setInterval(aktualizujDatumCas, 60000);
     nactiMesto("Opava");
 });

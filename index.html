@@ -89,6 +89,55 @@
                     <strong id="uv-index">--</strong>
                 </div>
             </div>
+            <div class="mini-card menu-item menu-oblibene">
+                <div class="mini-icon">⭐</div>
+                <div class="mini-info">
+                    <span>Oblíbená města</span>
+                </div>
+            </div>
+            <div class="mini-card menu-item menu-nastaveni">
+                <div class="mini-icon">⚙️</div>
+                <div class="mini-info">
+                    <span>Nastavení</span>
+                </div>
+            </div>
+            <div class="oblibena-mesta-panel" id="oblibena-mesta-panel" hidden>
+                <strong>Oblíbená města</strong>
+                <button type="button" id="ulozit-mesto">＋ Uložit aktuální město</button>
+                <div id="seznam-oblibenych"></div>
+            </div>
+            <div class="nastaveni-panel" id="nastaveni-panel" hidden>
+                <strong>Nastavení</strong>
+                <label>Teplota
+                    <select id="jednotka-teploty">
+                        <option value="c">°C</option>
+                        <option value="f">°F</option>
+                    </select>
+                </label>
+                <label>Vítr
+                    <select id="jednotka-vetru">
+                        <option value="kmh">km/h</option>
+                        <option value="mph">mph</option>
+                    </select>
+                </label>
+                <label class="nastaveni-prepinac">
+                    <input type="checkbox" id="svetly-rezim">
+                    Světlý režim
+                </label>
+                <label class="nastaveni-prepinac">
+                    <input type="checkbox" id="animace">
+                    Animované pozadí
+                </label>
+                <label>Automatické obnovení
+                    <select id="automaticke-obnoveni">
+                        <option value="0">Vypnuto</option>
+                        <option value="15">Každých 15 min</option>
+                        <option value="30">Každých 30 min</option>
+                        <option value="60">Každých 60 min</option>
+                    </select>
+                </label>
+                <button type="button" id="vymazat-oblibene">Vymazat oblíbená města</button>
+            </div>
         </aside>
 
         <!-- STŘEDNÍ KARTA -->
@@ -96,12 +145,14 @@
             <div class="vyhledavac">
                 <input type="text" id="vstup-mesto" placeholder="Zadej město..." autocomplete="off">
                 <button id="tlacitko-hledat">Hledat</button>
+                <button id="tlacitko-poloha" type="button" title="Použít moji polohu" aria-label="Použít moji polohu">⌖</button>
             </div>
 
             <div class="obsah-aplikace">
                 <div class="panel">
                     <div class="hlavni-pocasi">
-                        <h2 id="nazev-mesta">Načítám...</h2>
+                        <h1 id="nazev-mesta">Načítám...</h1>
+                        <div class="datum-cas" id="datum-cas"></div>
                         <div class="ikona" id="ikona-pocasi"></div>
                         <div class="teplota" id="teplota">--<span>°C</span></div>
                         <div class="stav" id="stav">Zadej město</div>
